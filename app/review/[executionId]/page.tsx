@@ -65,18 +65,18 @@ export default function ReviewApprovalPage() {
         console.log('Received approval data:', approvalData);
 
         // Transform the approval data to match our interface
-        // Backend returns: approvalData.rows[] with generated_content, compliance fields
-        const rows = approvalData.approvalData?.rows || [];
+        // Backend returns: approvalData.generatedContent[] with message, complianceScore, etc.
+        const rows = approvalData.approvalData?.generatedContent || [];
 
-        const transformedContent: GeneratedContent[] = rows.map((row: any, index: number) => ({
-          row: index + 1,
+        const transformedContent: GeneratedContent[] = rows.map((row: any) => ({
+          row: row.row,
           name: row.name || 'Unknown',
           product: row.product || 'Unknown',
-          message: row.generated_content || '',
-          complianceScore: 100 - (row.compliance_risk_score || 0), // Convert risk score to compliance score
-          complianceStatus: row.compliance_status === 'passed' ? 'pass' :
-                           row.compliance_status === 'failed' ? 'fail' : 'warning',
-          violations: row.compliance_suggestions || [],
+          message: row.message || '',
+          complianceScore: row.complianceScore || 0,
+          complianceStatus: row.complianceStatus === 'pass' ? 'pass' :
+                           row.complianceStatus === 'fail' ? 'fail' : 'warning',
+          violations: row.violations || [],
         }));
 
         console.log('Transformed content:', transformedContent);

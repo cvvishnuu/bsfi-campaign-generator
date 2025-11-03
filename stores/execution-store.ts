@@ -22,7 +22,7 @@ interface ExecutionStore {
 
 export const useExecutionStore = create<ExecutionStore>((set) => ({
   executionId: null,
-  status: 'PENDING',
+  status: 'pending',
   progress: 0,
   logs: [],
   approvalData: null,
@@ -39,7 +39,7 @@ export const useExecutionStore = create<ExecutionStore>((set) => ({
 
   reset: () => set({
     executionId: null,
-    status: 'PENDING',
+    status: 'pending',
     progress: 0,
     logs: [],
     approvalData: null,

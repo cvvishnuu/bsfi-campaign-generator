@@ -249,7 +249,7 @@ export default function Pricing() {
                           <span className="text-4xl font-bold text-gray-900">${price}</span>
                           <span className="text-gray-700">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                         </div>
-                        {billingCycle === 'annual' && plan.planType !== 'free' && (
+                        {billingCycle === 'annual' && plan.planType !== 'free' && plan.price.monthly !== null && plan.price.annual !== null && (
                           <p className="text-xs text-green-700 mt-1">
                             Save ${savings(plan.price.monthly, plan.price.annual).saved}/year
                           </p>

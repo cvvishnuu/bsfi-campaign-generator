@@ -24,6 +24,9 @@ import {
   Plus,
   Loader2,
   XCircle,
+  MessageCircle,
+  Mail,
+  Send,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { campaignApi } from '@/lib/api';
@@ -371,6 +374,44 @@ export default function ResultsPage() {
               <FileText className="w-5 h-5 mr-2" />
               Download Excel
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Send Campaign Teaser */}
+        <Card className="mb-8 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Send className="w-5 h-5 text-purple-600" />
+                  <h3 className="font-semibold text-lg text-gray-900">Ready to Send Your Campaign?</h3>
+                </div>
+                <p className="text-sm text-gray-700 mb-4">
+                  Want to distribute these messages via WhatsApp, Email, or SMS? Contact us to set up automated delivery for your campaigns.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <Badge variant="secondary" className="bg-white">
+                    <MessageCircle className="w-3 h-3 mr-1" />
+                    WhatsApp
+                  </Badge>
+                  <Badge variant="secondary" className="bg-white">
+                    <Mail className="w-3 h-3 mr-1" />
+                    Email
+                  </Badge>
+                  <Badge variant="secondary" className="bg-white">
+                    <Send className="w-3 h-3 mr-1" />
+                    SMS
+                  </Badge>
+                </div>
+              </div>
+              <div className="ml-6">
+                <Link href="/contact">
+                  <Button size="lg" className="bg-purple-600 text-white">
+                    Contact Sales
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

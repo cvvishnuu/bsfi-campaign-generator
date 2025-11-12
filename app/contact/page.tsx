@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import emailjs from "@emailjs/browser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,20 +26,35 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // Call API to send email
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // EmailJS configuration
+      const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || 'YOUR_SERVICE_ID';
+      const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || 'YOUR_TEMPLATE_ID';
+      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY';
+
+      // Map subject to readable format
+      const subjectMap: { [key: string]: string } = {
+        general: 'General Inquiry',
+        sales: 'Sales & Pricing',
+        support: 'Technical Support',
+        partnership: 'Partnership Opportunities',
+        feedback: 'Feedback & Suggestions',
+      };
+
+      // Send email using EmailJS
+      const result = await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          company: formData.company || 'Not provided',
+          phone: formData.phone || 'Not provided',
+          subject: subjectMap[formData.subject] || formData.subject,
+          message: formData.message,
+          to_email: 'chithu@newgendigital.com',
         },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send message');
-      }
+        publicKey
+      );
 
       console.log('Email sent successfully:', result);
       setIsSubmitted(true);
@@ -57,7 +73,7 @@ export default function ContactPage() {
       }, 3000);
     } catch (error) {
       console.error('Error sending email:', error);
-      alert(error instanceof Error ? error.message : 'Failed to send message. Please try again.');
+      alert('Failed to send message. Please try again or contact us directly at chithu@newgendigital.com');
     } finally {
       setIsSubmitting(false);
     }

@@ -57,14 +57,27 @@ export default function ResultsPage() {
         console.log('Received execution results:', response);
 
         // Extract results from the API response
-        // Backend returns: response.output.rows[] with compliance data
-        const rows = response.output?.rows || [];
+        // After approval, data can be in multiple locations:
+        // 1. response.output.rows[] (from workflow output)
+        // 2. response.output.approvalData.approvalData.rows[] (from manual approval node)
+        // 3. response.output.approvalData.rows[] (alternative structure)
+        let rows = response.output?.rows || [];
+
+        // If rows is empty, check approvalData structure
+        if (!rows || rows.length === 0) {
+          const approvalData = response.output?.approvalData;
+          if (approvalData) {
+            rows = approvalData.approvalData?.rows || approvalData.rows || [];
+          }
+        }
+
+        console.log('Extracted rows:', rows);
 
         const transformedResults: CampaignResult[] = rows.map((item: any, index: number) => ({
-          row: index + 1,
-          name: item.name || 'Unknown',
+          row: item.row || index + 1,
+          name: item.name || item.customer_name || 'Unknown',
           message: item.generated_content || item.message || '',
-          complianceScore: 100 - (item.compliance_risk_score || 0), // Convert risk score to compliance score
+          complianceScore: 100 - (item.compliance_risk_score || item.complianceScore || 0), // Convert risk score to compliance score
           complianceStatus: item.compliance_status === 'passed' || item.compliance_status === 'pass' ? 'pass' :
                            item.compliance_status === 'failed' || item.compliance_status === 'fail' ? 'fail' : 'warning',
           violations: item.compliance_flagged_terms || item.violations || [],
@@ -88,8 +101,9 @@ export default function ResultsPage() {
     totalMessages: campaignResults.length,
     approvedAt: new Date().toLocaleString(),
     avgComplianceScore:
-      campaignResults.reduce((sum, r) => sum + r.complianceScore, 0) /
-      campaignResults.length,
+      campaignResults.length > 0
+        ? campaignResults.reduce((sum, r) => sum + r.complianceScore, 0) / campaignResults.length
+        : 0,
   };
 
   const handleDownloadCSV = () => {
@@ -220,7 +234,7 @@ export default function ResultsPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 mb-4">
             <CheckCircle2 className="w-10 h-10 text-green-600" />
           </div>
-          <h1 className="text-4xl font-bold mb-2">Campaign Complete!</h1>
+          <h1 className="text-4xl font-bold mb-2 text-gray-900">Campaign Complete!</h1>
           <p className="text-lg text-gray-700">
             Your campaign has been successfully generated and approved
           </p>

@@ -35,7 +35,6 @@ export const campaignApi = {
       input: {
         csvData: formData.rows,
         prompt: formData.prompt,
-        targetAudience: formData.targetAudience,
         tone: formData.tone,
       },
       description: `BFSI Campaign: ${formData.prompt.substring(0, 50)}...`,

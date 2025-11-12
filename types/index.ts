@@ -21,11 +21,31 @@ export interface UsageStats {
   periodEnd: string;
 }
 
+export interface CsvRow {
+  customerId: string;
+  name: string;
+  phone: string;
+  email: string;
+  age: number;
+  city: string;
+  country: string;
+  occupation: string;
+  [key: string]: any; // Allow additional custom columns
+}
+
+export interface CsvPreviewData {
+  columns: string[];
+  sampleRows: CsvRow[];
+  totalRows: number;
+  missingColumns: string[];
+  hasAllRequired: boolean;
+}
+
 export interface CampaignFormData {
   csv: File | null;
-  rows: any[];
+  rows: CsvRow[];
+  csvPreview: CsvPreviewData | null;
   prompt: string;
-  targetAudience: string;
   tone: 'professional' | 'friendly' | 'urgent';
 }
 
@@ -51,20 +71,28 @@ export interface ExecutionResultsResponse {
   output: any;
 }
 
+export interface GeneratedContentRow {
+  row: number;
+  customerId: string;
+  name: string;
+  phone: string;
+  email: string;
+  age: number;
+  city: string;
+  country: string;
+  occupation: string;
+  message: string;
+  complianceScore: number;
+  complianceStatus: string;
+  violations?: string[];
+}
+
 export interface PendingApprovalData {
   executionId: string;
   workflowId: string;
   status: string;
   approvalData: {
-    generatedContent: Array<{
-      row: number;
-      name: string;
-      product: string;
-      message: string;
-      complianceScore: number;
-      complianceStatus: string;
-      violations?: string[];
-    }>;
+    generatedContent: GeneratedContentRow[];
   };
   startedAt: string;
 }

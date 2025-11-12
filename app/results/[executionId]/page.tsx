@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -22,17 +22,19 @@ import {
   Sparkles,
   Home,
   Plus,
-  Share2,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { campaignApi } from '@/lib/api';
 
 interface CampaignResult {
   row: number;
   name: string;
-  product: string;
   message: string;
   complianceScore: number;
   complianceStatus: string;
+  violations?: string[];
 }
 
 export default function ResultsPage() {
@@ -41,55 +43,45 @@ export default function ResultsPage() {
   const executionId = params.executionId as string;
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [campaignResults, setCampaignResults] = useState<CampaignResult[]>([]);
 
-  // Mock campaign results (will be replaced with actual API call)
-  const campaignResults: CampaignResult[] = [
-    {
-      row: 1,
-      name: 'John Smith',
-      product: 'Premium Credit Card',
-      message:
-        'Dear John, discover exclusive cashback benefits with our Premium Credit Card. Earn up to 5% on all purchases!',
-      complianceScore: 98,
-      complianceStatus: 'pass',
-    },
-    {
-      row: 2,
-      name: 'Sarah Johnson',
-      product: 'Investment Portfolio',
-      message:
-        'Hi Sarah, our curated Investment Portfolio offers balanced growth opportunities tailored to your financial goals.',
-      complianceScore: 92,
-      complianceStatus: 'pass',
-    },
-    {
-      row: 3,
-      name: 'Michael Chen',
-      product: 'Auto Loan',
-      message:
-        'Hello Michael, get pre-approved for an Auto Loan with competitive rates starting at 3.99% APR.',
-      complianceScore: 75,
-      complianceStatus: 'warning',
-    },
-    {
-      row: 4,
-      name: 'Emily Davis',
-      product: 'Home Mortgage',
-      message:
-        'Dear Emily, make your dream home a reality with our flexible Home Mortgage options and expert guidance.',
-      complianceScore: 95,
-      complianceStatus: 'pass',
-    },
-    {
-      row: 5,
-      name: 'Robert Wilson',
-      product: 'Personal Loan',
-      message:
-        'Hi Robert, need quick funds? Our Personal Loan offers instant approval with amounts up to $50,000.',
-      complianceScore: 88,
-      complianceStatus: 'pass',
-    },
-  ];
+  // Fetch real campaign results from API
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        setIsLoading(true);
+        const response = await campaignApi.getExecutionResults(executionId);
+
+        console.log('Received execution results:', response);
+
+        // Extract results from the API response
+        // Backend returns: response.output.rows[] with compliance data
+        const rows = response.output?.rows || [];
+
+        const transformedResults: CampaignResult[] = rows.map((item: any, index: number) => ({
+          row: index + 1,
+          name: item.name || 'Unknown',
+          message: item.generated_content || item.message || '',
+          complianceScore: 100 - (item.compliance_risk_score || 0), // Convert risk score to compliance score
+          complianceStatus: item.compliance_status === 'passed' || item.compliance_status === 'pass' ? 'pass' :
+                           item.compliance_status === 'failed' || item.compliance_status === 'fail' ? 'fail' : 'warning',
+          violations: item.compliance_flagged_terms || item.violations || [],
+        }));
+
+        console.log('Transformed results:', transformedResults);
+        setCampaignResults(transformedResults);
+      } catch (err) {
+        console.error('Error fetching execution results:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load campaign results');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, [executionId]);
 
   const campaignSummary = {
     executionId,
@@ -105,11 +97,10 @@ export default function ResultsPage() {
 
     try {
       // Create CSV content
-      const headers = ['Row', 'Name', 'Product', 'Message', 'Compliance Score', 'Status'];
+      const headers = ['Row', 'Name', 'Message', 'Compliance Score', 'Status'];
       const rows = campaignResults.map((result) => [
         result.row,
         result.name,
-        result.product,
         result.message,
         result.complianceScore,
         result.complianceStatus,
@@ -142,11 +133,10 @@ export default function ResultsPage() {
     try {
       // Create worksheet data
       const worksheetData = [
-        ['Row', 'Name', 'Product', 'Message', 'Compliance Score', 'Status'],
+        ['Row', 'Name', 'Message', 'Compliance Score', 'Status'],
         ...campaignResults.map((result) => [
           result.row,
           result.name,
-          result.product,
           result.message,
           result.complianceScore,
           result.complianceStatus,
@@ -162,7 +152,6 @@ export default function ResultsPage() {
       worksheet['!cols'] = [
         { wch: 5 },
         { wch: 20 },
-        { wch: 25 },
         { wch: 60 },
         { wch: 15 },
         { wch: 10 },
@@ -177,6 +166,38 @@ export default function ResultsPage() {
       setIsDownloading(false);
     }
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-lg text-gray-900">Loading campaign results...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <XCircle className="w-5 h-5" />
+              Error Loading Results
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -284,7 +305,6 @@ export default function ResultsPage() {
                 <TableRow>
                   <TableHead className="w-[60px]">Row</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Product</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead className="w-[120px]">Compliance</TableHead>
                 </TableRow>
@@ -294,7 +314,6 @@ export default function ResultsPage() {
                   <TableRow key={result.row}>
                     <TableCell className="font-medium">{result.row}</TableCell>
                     <TableCell>{result.name}</TableCell>
-                    <TableCell className="text-sm">{result.product}</TableCell>
                     <TableCell className="max-w-md">
                       <p className="text-sm">{result.message}</p>
                     </TableCell>

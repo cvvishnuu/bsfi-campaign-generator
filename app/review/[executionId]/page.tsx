@@ -37,7 +37,6 @@ import { campaignApi } from '@/lib/api';
 interface GeneratedContent {
   row: number;
   name: string;
-  product: string;
   message: string;
   complianceScore: number;
   complianceStatus: 'pass' | 'warning' | 'fail';
@@ -71,7 +70,6 @@ export default function ReviewApprovalPage() {
         const transformedContent: GeneratedContent[] = rows.map((row: any) => ({
           row: row.row,
           name: row.name || 'Unknown',
-          product: row.product || 'Unknown',
           message: row.message || '',
           complianceScore: row.complianceScore || 0,
           complianceStatus: row.complianceStatus === 'pass' ? 'pass' :
@@ -320,7 +318,6 @@ export default function ReviewApprovalPage() {
                 <TableRow>
                   <TableHead className="w-[60px]">Row</TableHead>
                   <TableHead>Customer</TableHead>
-                  <TableHead>Product</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead>Compliance</TableHead>
                   <TableHead className="w-[100px]">Actions</TableHead>
@@ -331,7 +328,6 @@ export default function ReviewApprovalPage() {
                   <TableRow key={content.row}>
                     <TableCell className="font-medium">{content.row}</TableCell>
                     <TableCell>{content.name}</TableCell>
-                    <TableCell className="text-sm">{content.product}</TableCell>
                     <TableCell className="max-w-md">
                       <p className="truncate text-sm">{content.message}</p>
                     </TableCell>
@@ -361,10 +357,6 @@ export default function ReviewApprovalPage() {
                             <div>
                               <Label className="text-sm font-semibold">Customer</Label>
                               <p className="text-sm mt-1 text-gray-900">{content.name}</p>
-                            </div>
-                            <div>
-                              <Label className="text-sm font-semibold">Product</Label>
-                              <p className="text-sm mt-1 text-gray-900">{content.product}</p>
                             </div>
                             <div>
                               <Label className="text-sm font-semibold">Generated Message</Label>

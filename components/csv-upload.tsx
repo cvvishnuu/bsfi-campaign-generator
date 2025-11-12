@@ -6,11 +6,14 @@ import { Upload, FileCheck, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import * as XLSX from 'xlsx';
+import { CsvPreviewData, CsvRow } from '@/types';
 
 interface CsvUploadProps {
-  onUpload: (rows: any[], file: File) => void;
+  onUpload: (rows: CsvRow[], file: File, preview: CsvPreviewData) => void;
   maxRows?: number;
 }
+
+const REQUIRED_COLUMNS = ['customerId', 'name', 'phone', 'email', 'age', 'city', 'country', 'occupation'];
 
 export function CsvUpload({ onUpload, maxRows = 100 }: CsvUploadProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -47,21 +50,45 @@ export function CsvUpload({ onUpload, maxRows = 100 }: CsvUploadProps) {
               return;
             }
 
-            // Check for required columns (name, product at minimum)
+            // Get column names (preserve original casing)
             const firstRow = jsonData[0] as any;
-            const hasName = 'name' in firstRow || 'Name' in firstRow;
-            const hasProduct = 'product' in firstRow || 'Product' in firstRow;
+            const columns = Object.keys(firstRow);
+            const columnsLowerMap = new Map(columns.map(col => [col.toLowerCase().trim(), col]));
 
-            if (!hasName || !hasProduct) {
-              setError(
-                'The CSV file must contain at least "name" and "product" columns.'
-              );
-              setIsProcessing(false);
-              return;
-            }
+            // Check for required columns (case-insensitive)
+            const missingColumns = REQUIRED_COLUMNS.filter(
+              (reqCol) => !Array.from(columnsLowerMap.keys()).includes(reqCol.toLowerCase())
+            );
 
+            // Normalize data - map to standardized column names (preserve values, standardize keys)
+            const normalizedData = jsonData.map((row: any) => {
+              const normalizedRow: any = {};
+              for (const [key, value] of Object.entries(row)) {
+                const lowerKey = key.toLowerCase().trim();
+                // Find the matching required column name
+                const standardKey = REQUIRED_COLUMNS.find(reqCol => reqCol.toLowerCase() === lowerKey) || key;
+                normalizedRow[standardKey] = value;
+              }
+              return normalizedRow;
+            }) as CsvRow[];
+
+            // Generate preview data (use standardized column names)
+            const standardizedColumns = columns.map(col => {
+              const lowerKey = col.toLowerCase().trim();
+              return REQUIRED_COLUMNS.find(reqCol => reqCol.toLowerCase() === lowerKey) || col;
+            });
+
+            const preview: CsvPreviewData = {
+              columns: standardizedColumns,
+              sampleRows: normalizedData.slice(0, 3),
+              totalRows: normalizedData.length,
+              missingColumns,
+              hasAllRequired: missingColumns.length === 0,
+            };
+
+            // Set file even if missing columns (to show preview)
             setFile(uploadedFile);
-            onUpload(jsonData, uploadedFile);
+            onUpload(normalizedData, uploadedFile, preview);
             setIsProcessing(false);
           } catch (err) {
             console.error('Error parsing file:', err);
@@ -109,7 +136,14 @@ export function CsvUpload({ onUpload, maxRows = 100 }: CsvUploadProps) {
   const handleRemove = () => {
     setFile(null);
     setError('');
-    onUpload([], null as any);
+    const emptyPreview: CsvPreviewData = {
+      columns: [],
+      sampleRows: [],
+      totalRows: 0,
+      missingColumns: [],
+      hasAllRequired: false,
+    };
+    onUpload([], null as any, emptyPreview);
   };
 
   return (

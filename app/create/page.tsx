@@ -12,8 +12,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CsvUpload } from '@/components/csv-upload';
-import { ArrowLeft, Sparkles, Target, MessageSquare, Loader2, AlertTriangle, Crown } from 'lucide-react';
-import { CampaignFormData } from '@/types';
+import { ColumnPreview } from '@/components/column-preview';
+import { ArrowLeft, Sparkles, MessageSquare, Loader2, AlertTriangle, Crown } from 'lucide-react';
+import { CampaignFormData, CsvPreviewData, CsvRow } from '@/types';
 import { campaignApi } from '@/lib/api';
 
 export default function CreateCampaignPage() {
@@ -26,8 +27,8 @@ export default function CreateCampaignPage() {
   const [formData, setFormData] = useState<CampaignFormData>({
     csv: null,
     rows: [],
+    csvPreview: null,
     prompt: '',
-    targetAudience: '',
     tone: 'professional',
   });
 
@@ -49,8 +50,8 @@ export default function CreateCampaignPage() {
     );
   }
 
-  const handleCsvUpload = (rows: any[], file: File) => {
-    setFormData((prev) => ({ ...prev, rows, csv: file }));
+  const handleCsvUpload = (rows: CsvRow[], file: File, preview: CsvPreviewData) => {
+    setFormData((prev) => ({ ...prev, rows, csv: file, csvPreview: preview }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,11 +64,6 @@ export default function CreateCampaignPage() {
 
     if (!formData.prompt.trim()) {
       alert('Please enter a campaign prompt');
-      return;
-    }
-
-    if (!formData.targetAudience.trim()) {
-      alert('Please enter a target audience');
       return;
     }
 
@@ -101,8 +97,8 @@ export default function CreateCampaignPage() {
   const isFormValid =
     formData.csv &&
     formData.rows.length > 0 &&
-    formData.prompt.trim() &&
-    formData.targetAudience.trim();
+    formData.csvPreview?.hasAllRequired &&
+    formData.prompt.trim();
 
   const campaignUsagePercent = (usageStats.campaignsGenerated / usageStats.campaignsLimit) * 100;
   const rowUsagePercent = (usageStats.rowsProcessed / usageStats.rowsLimit) * 100;
@@ -177,21 +173,23 @@ export default function CreateCampaignPage() {
               </CardTitle>
               <CardDescription>
                 Upload a CSV file with your customer data (max 100 rows). Required columns:
-                name, product
+                customer_id, name, phone, email, age, location, occupation
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <CsvUpload onUpload={handleCsvUpload} maxRows={100} />
-              {formData.rows.length > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>{formData.rows.length}</strong> rows loaded successfully
+
+              {/* Column Preview */}
+              {formData.csvPreview && formData.csvPreview.totalRows > 0 && (
+                <ColumnPreview preview={formData.csvPreview} />
+              )}
+
+              {/* Row limit warning */}
+              {formData.rows.length > 0 && formData.rows.length + usageStats.rowsProcessed > usageStats.rowsLimit && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700">
+                    ⚠️ This would exceed your row limit. Please reduce rows or upgrade your plan.
                   </p>
-                  {formData.rows.length + usageStats.rowsProcessed > usageStats.rowsLimit && (
-                    <p className="text-sm text-red-700 mt-1">
-                      ⚠️ This would exceed your row limit. Please reduce rows or upgrade your plan.
-                    </p>
-                  )}
                 </div>
               )}
             </CardContent>
@@ -219,7 +217,7 @@ export default function CreateCampaignPage() {
                 </Label>
                 <Textarea
                   id="prompt"
-                  placeholder="Example: Generate a personalized credit card offer highlighting cashback benefits..."
+                  placeholder="Example: Generate a personalized credit card offer highlighting cashback benefits for each customer in the CSV..."
                   value={formData.prompt}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, prompt: e.target.value }))
@@ -228,26 +226,7 @@ export default function CreateCampaignPage() {
                   className="resize-none"
                 />
                 <p className="text-xs text-gray-600">
-                  Describe what you want the AI to generate for each customer
-                </p>
-              </div>
-
-              {/* Target Audience */}
-              <div className="space-y-2">
-                <Label htmlFor="targetAudience" className="flex items-center gap-2 text-gray-900">
-                  <Target className="w-4 h-4" />
-                  Target Audience
-                </Label>
-                <Input
-                  id="targetAudience"
-                  placeholder="Example: Young professionals aged 25-35..."
-                  value={formData.targetAudience}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, targetAudience: e.target.value }))
-                  }
-                />
-                <p className="text-xs text-gray-600">
-                  Describe your target audience to personalize the messaging
+                  Describe what you want the AI to generate for each customer. The CSV data will be used to personalize the content.
                 </p>
               </div>
 

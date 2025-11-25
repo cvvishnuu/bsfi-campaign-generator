@@ -23,9 +23,9 @@ interface AuthStore {
 // Plan limits
 export const PLAN_LIMITS = {
   free: {
-    campaignsLimit: 3,
-    rowsLimit: 30, // 3 campaigns × 10 rows each
-    features: ['3 campaigns per month', 'Up to 10 rows per campaign', 'Basic templates', 'Email support'],
+    campaignsLimit: 100,
+    rowsLimit: 1000, // 100 campaigns × 10 rows each
+    features: ['100 campaigns per month', 'Up to 10 rows per campaign', 'Basic templates', 'Email support'],
   },
   starter: {
     campaignsLimit: 20,
@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       usageStats: null,
 
-      login: async (email: string, password: string) => {
+      login: async (email: string) => {
         // TODO: Replace with actual API call
         // const response = await authApi.login(email, password);
         // set({ user: response.user, isAuthenticated: true });
@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthStore>()(
         await get().fetchUsageStats();
       },
 
-      signup: async (email: string, password: string, name: string) => {
+      signup: async (email: string, name: string) => {
         // TODO: Replace with actual API call
         // const response = await authApi.signup(email, password, name);
         // set({ user: response.user, isAuthenticated: true });

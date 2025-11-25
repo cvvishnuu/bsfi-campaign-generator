@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   ArrowLeft,
   Download,
@@ -27,9 +36,14 @@ import {
   MessageCircle,
   Mail,
   Send,
+  Eye,
+  Brain,
+  Shield,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { campaignApi } from '@/lib/api';
+import { XaiReasoningPanel, ComplianceXaiPanel } from '@/components/xai';
+import { XaiMetadata, ComplianceXaiMetadata } from '@/types';
 
 interface CampaignResult {
   row: number;
@@ -38,11 +52,27 @@ interface CampaignResult {
   complianceScore: number;
   complianceStatus: string;
   violations?: string[];
+  xai?: XaiMetadata;
+  compliance_xai?: ComplianceXaiMetadata;
+}
+interface RawResultRow {
+  row?: number;
+  name?: string;
+  customer_name?: string;
+  generated_content?: string;
+  message?: string;
+  compliance_risk_score?: number;
+  complianceScore?: number;
+  compliance_status?: string;
+  compliance_flagged_terms?: string[];
+  violations?: string[];
+  xai?: XaiMetadata;
+  compliance_xai?: ComplianceXaiMetadata;
+  [key: string]: unknown;
 }
 
 export default function ResultsPage() {
   const params = useParams();
-  const router = useRouter();
   const executionId = params.executionId as string;
 
   const [isDownloading, setIsDownloading] = useState(false);
@@ -125,26 +155,38 @@ export default function ResultsPage() {
         // 1. response.output.rows[] (from workflow output)
         // 2. response.output.approvalData.approvalData.rows[] (from manual approval node)
         // 3. response.output.approvalData.rows[] (alternative structure)
-        let rows = response.output?.rows || [];
+          let rows: RawResultRow[] = Array.isArray(response.output?.rows)
+            ? (response.output.rows as RawResultRow[])
+            : [];
 
         // If rows is empty, check approvalData structure
-        if (!rows || rows.length === 0) {
-          const approvalData = response.output?.approvalData;
-          if (approvalData) {
-            rows = approvalData.approvalData?.rows || approvalData.rows || [];
-          }
-        }
+            if (!rows || rows.length === 0) {
+              const approvalData = response.output?.approvalData as
+                | { approvalData?: { rows?: RawResultRow[] }; rows?: RawResultRow[] }
+                | undefined;
+              if (approvalData?.approvalData?.rows) {
+                rows = approvalData.approvalData.rows;
+              } else if (approvalData?.rows) {
+                rows = approvalData.rows;
+              }
+            }
 
         console.log('Extracted rows:', rows);
 
-        const transformedResults: CampaignResult[] = rows.map((item: any, index: number) => ({
-          row: item.row || index + 1,
+        const transformedResults: CampaignResult[] = rows.map((item, index) => ({
+          row: item.row ?? index + 1,
           name: item.name || item.customer_name || 'Unknown',
           message: item.generated_content || item.message || '',
-          complianceScore: 100 - (item.compliance_risk_score || item.complianceScore || 0), // Convert risk score to compliance score
-          complianceStatus: item.compliance_status === 'passed' || item.compliance_status === 'pass' ? 'pass' :
-                           item.compliance_status === 'failed' || item.compliance_status === 'fail' ? 'fail' : 'warning',
+          complianceScore: 100 - (Number(item.compliance_risk_score) || Number(item.complianceScore) || 0),
+          complianceStatus:
+            item.compliance_status === 'passed' || item.compliance_status === 'pass'
+              ? 'pass'
+              : item.compliance_status === 'failed' || item.compliance_status === 'fail'
+                ? 'fail'
+                : 'warning',
           violations: item.compliance_flagged_terms || item.violations || [],
+          xai: item.xai,
+          compliance_xai: item.compliance_xai,
         }));
 
         console.log('Transformed results:', transformedResults);
@@ -431,6 +473,7 @@ export default function ResultsPage() {
                   <TableHead>Customer</TableHead>
                   <TableHead>Message</TableHead>
                   <TableHead className="w-[120px]">Compliance</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -439,7 +482,7 @@ export default function ResultsPage() {
                     <TableCell className="font-medium">{result.row}</TableCell>
                     <TableCell>{result.name}</TableCell>
                     <TableCell className="max-w-md">
-                      <p className="text-sm">{result.message}</p>
+                      <p className="text-sm truncate">{result.message}</p>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -453,6 +496,72 @@ export default function ResultsPage() {
                       >
                         {result.complianceScore}%
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>Message Details - Row {result.row}</DialogTitle>
+                            <DialogDescription>
+                              Review message, compliance, and AI explainability
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <span className="text-sm font-semibold text-gray-900">Customer</span>
+                              <p className="text-sm mt-1 text-gray-700">{result.name}</p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-semibold text-gray-900">Message</span>
+                              <p className="text-sm mt-1 p-3 bg-gray-50 rounded border text-gray-900">
+                                {result.message}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-sm font-semibold text-gray-900">Compliance Score</span>
+                              <div className="mt-2">
+                                <Badge
+                                  variant={
+                                    result.complianceStatus === 'pass'
+                                      ? 'success'
+                                      : result.complianceStatus === 'warning'
+                                      ? 'warning'
+                                      : 'destructive'
+                                  }
+                                >
+                                  {result.complianceScore}%
+                                </Badge>
+                              </div>
+                            </div>
+
+                            {/* XAI Tabs */}
+                            <Tabs defaultValue="content" className="w-full">
+                              <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="content" className="flex items-center gap-2">
+                                  <Brain className="w-4 h-4" />
+                                  Content Analysis
+                                </TabsTrigger>
+                                <TabsTrigger value="compliance" className="flex items-center gap-2">
+                                  <Shield className="w-4 h-4" />
+                                  Compliance Check
+                                </TabsTrigger>
+                              </TabsList>
+                              <TabsContent value="content" className="mt-4">
+                                <XaiReasoningPanel xai={result.xai} />
+                              </TabsContent>
+                              <TabsContent value="compliance" className="mt-4">
+                                <ComplianceXaiPanel complianceXai={result.compliance_xai} />
+                              </TabsContent>
+                            </Tabs>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </TableCell>
                   </TableRow>
                 ))}

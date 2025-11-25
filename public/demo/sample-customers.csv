@@ -1,0 +1,4 @@
+customer_id,name,phone,email,age,location,occupation,income,creditScore
+1001,Rajesh Kumar,+919876543210,rajesh.kumar@example.com,35,Mumbai,Software Engineer,75000,720
+1002,Priya Sharma,+919876543211,priya.sharma@example.com,28,Delhi,Marketing Manager,90000,780
+1003,Amit Patel,+919876543212,amit.patel@example.com,42,Bangalore,Business Owner,120000,650

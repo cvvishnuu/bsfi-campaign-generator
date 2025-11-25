@@ -19,6 +19,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.35.0",
     "@emailjs/browser": "^4.4.1",
+    "@google-cloud/text-to-speech": "^6.4.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-progress": "^1.1.7",
@@ -32,6 +33,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-dropzone": "^14.3.8",
+    "shepherd.js": "^14.5.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
     "xlsx": "^0.18.5",

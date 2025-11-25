@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Audio Files</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #log {
+      background: #f4f4f4;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+      min-height: 200px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>Audio File Tester</h1>
+  <p>Test each audio file individually to see if onended event fires:</p>
+
+  <div>
+    <button onclick="testAudio(0)">Test Step 0 (Welcome)</button>
+    <button onclick="testAudio(1)">Test Step 1</button>
+    <button onclick="testAudio(2)">Test Step 2</button>
+    <button onclick="testAudio(3)">Test Step 3</button>
+  </div>
+
+  <div id="log">Ready to test...\n</div>
+
+  <script>
+    let logEl = document.getElementById('log');
+
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      logEl.textContent += `[${timestamp}] ${message}\n`;
+      console.log(message);
+    }
+
+    function testAudio(stepNumber) {
+      logEl.textContent = '';
+      log(`🧪 Testing step-${stepNumber}.mp3`);
+
+      const audio = new Audio(`/demo/audio/step-${stepNumber}.mp3`);
+
+      audio.onloadstart = () => log('⏳ Loading started...');
+      audio.onloadedmetadata = () => log(`✅ Metadata loaded - Duration: ${audio.duration}s`);
+      audio.onloadeddata = () => log('✅ Data loaded');
+      audio.oncanplay = () => log('✅ Can play');
+      audio.oncanplaythrough = () => log('✅ Can play through');
+
+      audio.onplay = () => log('▶️ Playing');
+      audio.onpause = () => log('⏸️ Paused');
+      audio.ontimeupdate = () => {
+        if (audio.currentTime > 0 && Math.floor(audio.currentTime) % 2 === 0) {
+          log(`⏱️ Time: ${audio.currentTime.toFixed(1)}s / ${audio.duration.toFixed(1)}s`);
+        }
+      };
+
+      audio.onended = () => {
+        log('✅ ✅ ✅ ENDED EVENT FIRED! ✅ ✅ ✅');
+        log(`Final time: ${audio.currentTime.toFixed(1)}s`);
+      };
+
+      audio.onerror = (e) => {
+        log(`❌ ERROR: ${e.type}`);
+        if (audio.error) {
+          log(`Error code: ${audio.error.code}`);
+          log(`Error message: ${audio.error.message}`);
+        }
+      };
+
+      audio.play().then(() => {
+        log('✅ Play promise resolved');
+      }).catch((err) => {
+        log(`❌ Play failed: ${err.message}`);
+      });
+    }
+  </script>
+</body>
+</html>

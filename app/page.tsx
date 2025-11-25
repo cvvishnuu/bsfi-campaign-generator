@@ -112,10 +112,12 @@ export default function Home() {
               Create Campaign
             </Button>
           </Link>
-          <Button size="lg" variant="outline" className="text-lg px-8 text-gray-900 font-semibold border-gray-300 hover:bg-gray-50">
-            <BarChart className="w-5 h-5 mr-2" />
-            View Demo
-          </Button>
+          <Link href="/demo">
+            <Button size="lg" variant="outline" className="text-lg px-8 text-gray-900 font-semibold border-gray-300 hover:bg-gray-50">
+              <BarChart className="w-5 h-5 mr-2" />
+              View Demo
+            </Button>
+          </Link>
         </div>
 
         {/* Stats */}

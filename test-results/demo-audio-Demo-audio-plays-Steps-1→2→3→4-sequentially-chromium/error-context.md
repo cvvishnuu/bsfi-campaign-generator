@@ -1,0 +1,67 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Back to Home" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - button "Back to Home" [ref=e6]:
+            - img [ref=e7]
+            - text: Back to Home
+        - generic [ref=e9]:
+          - img [ref=e10]
+          - text: Demo Mode
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - img [ref=e16]
+          - text: Interactive Demo
+        - heading "Create Marketing Campaign" [level=1] [ref=e19]
+        - paragraph [ref=e20]: Watch how easy it is to generate compliant campaigns
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - heading "1 Upload Customer Data" [level=3] [ref=e23]:
+            - generic [ref=e25]: "1"
+            - text: Upload Customer Data
+          - paragraph [ref=e26]: CSV file with customer details (max 100 rows)
+        - generic [ref=e29]:
+          - paragraph [ref=e30]: ✅ sample-customers.csv loaded
+          - paragraph [ref=e31]: 3 customers ready to process
+          - generic [ref=e33]:
+            - generic [ref=e34]: customer_id, name, email, occupation...
+            - generic [ref=e35]: 1001, Rajesh Kumar, rajesh@...
+            - generic [ref=e36]: 1002, Priya Sharma, priya@...
+            - generic [ref=e37]: 1003, Amit Patel, amit@...
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - heading "2 Configure Campaign" [level=3] [ref=e40]:
+            - generic [ref=e42]: "2"
+            - text: Configure Campaign
+          - paragraph [ref=e43]: Set your campaign parameters
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]:
+              - img [ref=e47]
+              - text: Campaign Prompt
+            - textbox "Campaign Prompt" [ref=e49]:
+              - /placeholder: Describe your campaign...
+              - text: Generate a personalized credit card offer highlighting cashback benefits and premium features. Mention their occupation and credit score to make it relevant. Keep it professional and compliance-friendly with all required disclaimers.
+          - generic [ref=e50]:
+            - text: Message Tone
+            - generic [ref=e51]:
+              - button "professional" [ref=e52]
+              - button "friendly" [ref=e53]
+              - button "urgent" [ref=e54]
+      - generic [ref=e57]:
+        - generic [ref=e58]:
+          - heading "Ready to Generate?" [level=3] [ref=e59]
+          - paragraph [ref=e60]: Start the AI campaign generation
+        - button "Start Demo" [ref=e61]:
+          - img [ref=e62]
+          - text: Start Demo
+  - button "Open Next.js Dev Tools" [ref=e70] [cursor=pointer]:
+    - img [ref=e71]
+  - alert [ref=e74]
+```

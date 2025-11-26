@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ import { bffApi } from '@/lib/bff-api';
 export default function CreateCampaignPage() {
   const router = useRouter();
   const { user: clerkUser, isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [usageStats, setUsageStats] = useState<UsageStats>({
     userId: 'clerk-user',
     campaignsGenerated: 0,
@@ -58,7 +59,7 @@ export default function CreateCampaignPage() {
 
       try {
         // Get Clerk session token
-        const token = await clerkUser.getToken();
+        const token = await getToken();
         if (!token) {
           console.error('No auth token available');
           setIsLoadingUsage(false);
@@ -86,7 +87,7 @@ export default function CreateCampaignPage() {
     };
 
     fetchUsage();
-  }, [isLoaded, isSignedIn, clerkUser]);
+  }, [isLoaded, isSignedIn, clerkUser, getToken]);
 
   if (!isLoaded || !isSignedIn) {
     return (

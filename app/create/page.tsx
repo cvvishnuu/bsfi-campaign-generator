@@ -15,19 +15,22 @@ import { ColumnPreview } from '@/components/column-preview';
 import { ArrowLeft, Sparkles, MessageSquare, Loader2, AlertTriangle, Crown, Download } from 'lucide-react';
 import { CampaignFormData, CsvPreviewData, CsvRow, UsageStats } from '@/types';
 import { campaignApi } from '@/lib/api';
+import { sanitizeInput } from '@/lib/sanitize';
+import { bffApi } from '@/lib/bff-api';
 
 export default function CreateCampaignPage() {
   const router = useRouter();
   const { user: clerkUser, isSignedIn, isLoaded } = useUser();
-  const [usageStats] = useState<UsageStats>({
+  const [usageStats, setUsageStats] = useState<UsageStats>({
     userId: 'clerk-user',
     campaignsGenerated: 0,
-    campaignsLimit: 3,
+    campaignsLimit: 100, // Free tier limit: 100 campaigns
     rowsProcessed: 0,
-    rowsLimit: 30,
+    rowsLimit: 1000, // 10 rows per campaign * 100 campaigns
     periodStart: new Date().toISOString(),
     periodEnd: new Date().toISOString(),
   });
+  const [isLoadingUsage, setIsLoadingUsage] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [limitMessage, setLimitMessage] = useState('');
@@ -44,6 +47,46 @@ export default function CreateCampaignPage() {
       router.push('/login');
     }
   }, [isLoaded, isSignedIn, router]);
+
+  // Fetch real usage data from BFF
+  useEffect(() => {
+    const fetchUsage = async () => {
+      if (!isLoaded || !isSignedIn || !clerkUser) {
+        setIsLoadingUsage(false);
+        return;
+      }
+
+      try {
+        // Get Clerk session token
+        const token = await clerkUser.getToken();
+        if (!token) {
+          console.error('No auth token available');
+          setIsLoadingUsage(false);
+          return;
+        }
+
+        // Fetch usage from BFF
+        const { usage } = await bffApi.getUsage(token);
+
+        setUsageStats({
+          userId: clerkUser.id,
+          campaignsGenerated: usage.campaigns_generated,
+          campaignsLimit: 100, // Free tier limit
+          rowsProcessed: usage.rows_processed,
+          rowsLimit: 1000, // 10 rows * 100 campaigns
+          periodStart: usage.period_start,
+          periodEnd: usage.period_end,
+        });
+      } catch (error) {
+        console.error('Failed to fetch usage stats:', error);
+        // Keep default values if fetch fails
+      } finally {
+        setIsLoadingUsage(false);
+      }
+    };
+
+    fetchUsage();
+  }, [isLoaded, isSignedIn, clerkUser]);
 
   if (!isLoaded || !isSignedIn) {
     return (
@@ -183,7 +226,7 @@ export default function CreateCampaignPage() {
                     Upload Customer Data
                   </CardTitle>
                   <CardDescription>
-                    Upload a CSV file with your customer data (max 100 rows). Required columns:
+                    Upload a CSV file with your customer data (max 10 rows). Required columns:
                     customer_id, name, phone, email, age, location, occupation
                   </CardDescription>
                 </div>
@@ -196,7 +239,7 @@ export default function CreateCampaignPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <CsvUpload onUpload={handleCsvUpload} maxRows={100} />
+              <CsvUpload onUpload={handleCsvUpload} maxRows={10} />
 
               {/* Column Preview */}
               {formData.csvPreview && formData.csvPreview.totalRows > 0 && (
@@ -239,7 +282,7 @@ export default function CreateCampaignPage() {
                   placeholder="Example: Generate a personalized credit card offer highlighting cashback benefits for each customer in the CSV..."
                   value={formData.prompt}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, prompt: e.target.value }))
+                    setFormData((prev) => ({ ...prev, prompt: sanitizeInput(e.target.value) }))
                   }
                   rows={4}
                   className="resize-none"

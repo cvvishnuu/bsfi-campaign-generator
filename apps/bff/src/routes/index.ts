@@ -67,14 +67,39 @@ router.post('/campaigns/execute', async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() });
     }
 
-    const executionId = `exec_${Date.now()}`;
-
-    // Track usage; rowsProcessed based on csv rows
     const userContext = getUserContext(req);
     if (!userContext) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Get current usage
+    const usage = await getUsage(userContext.userId);
+
+    // Enforce 10 row limit per campaign
+    const MAX_ROWS_PER_CAMPAIGN = 10;
+    if (parsed.data.csvData.length > MAX_ROWS_PER_CAMPAIGN) {
+      return res.status(400).json({
+        error: 'Row limit exceeded',
+        message: `Maximum ${MAX_ROWS_PER_CAMPAIGN} rows allowed per campaign. You uploaded ${parsed.data.csvData.length} rows. Please reduce the number of rows and try again.`,
+        limit: MAX_ROWS_PER_CAMPAIGN,
+        provided: parsed.data.csvData.length,
+      });
+    }
+
+    // Enforce 100 campaign limit (free tier)
+    const MAX_CAMPAIGNS = 100;
+    if (usage.campaigns_generated >= MAX_CAMPAIGNS) {
+      return res.status(403).json({
+        error: 'Campaign limit reached',
+        message: `You have reached your free tier limit of ${MAX_CAMPAIGNS} campaigns. Please upgrade your plan to continue.`,
+        limit: MAX_CAMPAIGNS,
+        current: usage.campaigns_generated,
+      });
+    }
+
+    const executionId = `exec_${Date.now()}`;
+
+    // Track usage; rowsProcessed based on csv rows
     await incrementUsage(userContext.userId, 1, parsed.data.csvData.length);
 
     res.status(201).json({

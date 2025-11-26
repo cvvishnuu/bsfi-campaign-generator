@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { CsvUpload } from '@/components/csv-upload';
 import { ColumnPreview } from '@/components/column-preview';
-import { ArrowLeft, Sparkles, MessageSquare, Loader2, AlertTriangle, Crown } from 'lucide-react';
+import { ArrowLeft, Sparkles, MessageSquare, Loader2, AlertTriangle, Crown, Download } from 'lucide-react';
 import { CampaignFormData, CsvPreviewData, CsvRow, UsageStats } from '@/types';
 import { campaignApi } from '@/lib/api';
 
@@ -174,16 +174,26 @@ export default function CreateCampaignPage() {
           {/* CSV Upload Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-gray-900">
-                <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-600 font-bold">1</span>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="flex items-center gap-2 text-gray-900">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-600 font-bold">1</span>
+                    </div>
+                    Upload Customer Data
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a CSV file with your customer data (max 100 rows). Required columns:
+                    customer_id, name, phone, email, age, location, occupation
+                  </CardDescription>
                 </div>
-                Upload Customer Data
-              </CardTitle>
-              <CardDescription>
-                Upload a CSV file with your customer data (max 100 rows). Required columns:
-                customer_id, name, phone, email, age, location, occupation
-              </CardDescription>
+                <a href="/templates/sample-customers.csv" download="sample-customers.csv">
+                  <Button type="button" variant="outline" size="sm" className="flex items-center gap-2">
+                    <Download className="w-4 h-4" />
+                    Download Sample
+                  </Button>
+                </a>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <CsvUpload onUpload={handleCsvUpload} maxRows={100} />

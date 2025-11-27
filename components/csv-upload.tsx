@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import * as XLSX from 'xlsx';
 import { CsvPreviewData, CsvRow } from '@/types';
+import { sanitizeObject } from '@/lib/sanitize';
 
 interface CsvUploadProps {
   onUpload: (rows: CsvRow[], file: File | null, preview: CsvPreviewData) => void;
@@ -15,7 +16,7 @@ interface CsvUploadProps {
 
 const REQUIRED_COLUMNS = ['customerId', 'name', 'phone', 'email', 'age', 'city', 'country', 'occupation'];
 
-export function CsvUpload({ onUpload, maxRows = 100 }: CsvUploadProps) {
+export function CsvUpload({ onUpload, maxRows = 10 }: CsvUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,6 +63,7 @@ export function CsvUpload({ onUpload, maxRows = 100 }: CsvUploadProps) {
             );
 
             // Normalize data - map to standardized column names (preserve values, standardize keys)
+            // Also sanitize all string values to prevent XSS attacks
             const normalizedData = jsonData.map((row: RawRow) => {
               const normalizedRow: Record<string, unknown> = {};
               for (const [key, value] of Object.entries(row)) {
@@ -70,7 +72,8 @@ export function CsvUpload({ onUpload, maxRows = 100 }: CsvUploadProps) {
                 const standardKey = REQUIRED_COLUMNS.find(reqCol => reqCol.toLowerCase() === lowerKey) || key;
                 normalizedRow[standardKey] = value;
               }
-              return normalizedRow as CsvRow;
+              // Sanitize the entire row to prevent XSS
+              return sanitizeObject(normalizedRow) as CsvRow;
             });
 
             // Generate preview data (use standardized column names)
